@@ -335,7 +335,7 @@ footer{margin:22px 0 calc(28px + env(safe-area-inset-bottom,0px));font-size:12px
 
   <section class="block" id="decisions">
     <div class="bh">
-      <div><div class="eyebrow">결재 서류</div><h2 id="decTitle">오늘의 결정</h2><p id="decSub">보유 종목별 PB센터 신호와 리스크관리본부 점검 결과예요. 회의에서 결정되면 도장이 찍혀요.</p></div>
+      <div><div class="eyebrow">결재 서류</div><h2 id="decTitle">오늘의 결정</h2><p id="decSub">보유 종목별 PB센터 신호와 리스크관리본부 점검 결과예요. 회의에서 결정되면 도장이 찍혀요. 손절 규칙: 종가 2일 연속 손절선 아래면 확정, 바닥선(손절선보다 7%p 아래) 이탈은 즉시 확정.</p></div>
       <div class="right"><div class="kyul" aria-label="결재란"><div><span>담당 · PB</span><em><i class="seal sm" id="k1">노아</i></em></div><div><span>리스크</span><em><i class="seal sm" id="k2">가드</i></em></div><div><span>CIO</span><em><i class="seal sm" id="k3">결재</i></em></div></div></div>
     </div>
     <div class="scroll-x"><table id="decTable"><thead><tr>
@@ -441,7 +441,7 @@ const STAFF = [
   {id:"pb", name:"노아", dept:"PB센터", role:"PB · 포트폴리오 담당", color:"#2D9B5A", acc:"tie",
    job:"보유 종목마다 보류·추매·부분매도·풀매도 신호를 내요.", src:"stock_analysis.py · analyze_portfolio (공격형 원칙)"},
   {id:"risk", name:"가드", dept:"리스크관리본부", role:"리스크 매니저", color:"#56677F", acc:"visor",
-   job:"손절선·익절선·비중 한도를 감시하고 TOP3 규칙을 검증해요.", src:"positions.py · daily_update.py · validate_top3_picks"},
+   job:"손절선·익절선·비중 한도를 감시하고 TOP3 규칙을 검증해요. 손절은 종가 2일 확인 + 바닥선 규칙으로 판정해요.", src:"stop_rules.py · daily_update.py · validate_top3_picks"},
   {id:"compliance", name:"로우", dept:"준법감시팀", role:"준법감시인", color:"#B5655A", acc:"shield",
    job:"손절 규정·비중 한도·집중도·TOP3 규칙을 결정마다 점검하고 예외를 기록해요.", src:"대시보드 규정 점검 (결정 + 포지션 데이터)"},
   {id:"trading", name:"덱스", dept:"트레이딩데스크", role:"트레이더", color:"#D24C88", acc:"headset",
@@ -536,7 +536,16 @@ function goHome(b){ const s = DESKS[b.id].seat; goTo(b, s.x, s.y, "up", {onArriv
 /* ───────────────────────── 데이터 → 회의 대본 ───────────────────────── */
 let DATA = null, MEETING = null, SCRIPT = [], STEP = -1, stepT = 0, meetingIdx = 0, decidedTickers = new Set();
 const ACTION = {"풀매도":"전량 매도합니다.","부분매도":"절반 매도합니다.","보류":"보유를 유지합니다.","추매":"추가 매수를 검토합니다.","?":"PB 신호가 없어 다음 회의에서 다시 봅니다."};
-const STATUS_TXT = {stop_hit:["⛔ 손절 도달","crit"], near_stop:["손절 근접","warn"], tp_hit:["🎯 1차목표 도달","ok"], near_tp:["익절 근접","ok"], ok:["정상","neutral"]};
+const STATUS_TXT = {stop_hit:["⛔ 손절 확정","crit"], stop_watch:["⚠️ 손절 경고 1일차","warn"], near_stop:["손절 근접","warn"], tp_hit:["🎯 1차목표 도달","ok"], near_tp:["익절 근접","ok"], ok:["정상","neutral"]};
+// 손절 규칙 (stop_rules.py와 같음): 완성 종가 2일 연속 손절선 아래 → 확정, 바닥선(손절선 -7%p) 아래 → 즉시 확정, 첫날은 경고
+const STOP_RULE = "종가 2일 연속 손절선 아래면 확정 · 바닥선(손절선보다 7%p 아래) 이탈은 즉시 확정 · 첫날은 경고";
+function stopLine(p){
+  const m = v => fmt.money(v, p.currency);
+  if (p.status === "stop_hit") return `손절 확정 — ${(p.stop_days_below||0) >= 2 ? `${p.stop_days_below}일 연속 종가 이탈` : `바닥선 ${m(p.floor_price)} 이탈`}. 손절선 ${m(p.stop_price)}.`;
+  if (p.status === "stop_watch") return `손절 경고 1일차 — 종가가 손절선 ${m(p.stop_price)} 아래로 마감. 다음 종가도 아래거나 바닥선 ${m(p.floor_price)} 아래면 확정이에요.`;
+  if (p.stop_gap_pct == null) return "";
+  return p.stop_gap_pct <= 0 ? `현재가가 손절선 ${m(p.stop_price)} 아래지만 종가 기준으론 아직 미확정이에요.` : `손절선 ${m(p.stop_price)}까지 ${p.stop_gap_pct.toFixed(1)}% 남았습니다.${p.stop_gap_pct<=3?" 근접 경보.":""}`;
+}
 function rsiBucket(rsi){ const q = DATA?.quant; if (rsi==null || !q?.rsi_bucket) return null; const k = rsi<30?"RSI<30":rsi<40?"RSI30-40":rsi<50?"RSI40-50":rsi<60?"RSI50-60":rsi<70?"RSI60-70":"RSI>70"; return q.rsi_bucket.find(b => b.name.startsWith(k)); }
 function meetingNo(m){ const all = DATA.meetings.map(x=>x.date).sort(); return all.indexOf(m.date) + 1; }
 function firstSentence(s, n=96){ s = String(s||"").trim(); const m = s.match(/^(.+?[.!?。])(\s|$)/); return fmt.short(m ? m[1] : s, n); }
@@ -548,8 +557,8 @@ function complianceChecks(){
   const pos = DATA.positions||[], m = DATA.meetings[0], sig = Object.fromEntries(m.agenda.map(a=>[a.ticker,a])), R = [];
   const keep = pos.filter(p=>p.status==="stop_hit" && ["보류","추매"].includes(sig[p.ticker]?.signal));
   const sold = pos.filter(p=>p.status==="stop_hit" && ["풀매도","부분매도"].includes(sig[p.ticker]?.signal));
-  R.push({rule:"손절 규정", desc:"손절선 아래 종목은 정리하거나 예외 사유를 기록", status: keep.length?"warn":"ok",
-    detail: keep.length ? `예외 ${keep.length}건 — ${keep.map(p=>`${p.ticker}(${sig[p.ticker].signal})`).join(", ")}. PB 근거를 예외 사유로 기록` : sold.length ? `손절 대상 ${sold.map(p=>p.ticker).join(", ")} 정리 결정` : "손절선 아래 종목 없음",
+  R.push({rule:"손절 규정", desc:"손절 확정(종가 2일 연속 이탈·바닥선 이탈) 종목은 정리하거나 예외 사유를 기록", status: keep.length?"warn":"ok",
+    detail: keep.length ? `예외 ${keep.length}건 — ${keep.map(p=>`${p.ticker}(${sig[p.ticker].signal})`).join(", ")}. PB 근거를 예외 사유로 기록` : sold.length ? `손절 확정 ${sold.map(p=>p.ticker).join(", ")} 정리 결정` : `손절 확정 종목 없음${pos.some(p=>p.status==="stop_watch") ? ` · 경고 1일차 ${pos.filter(p=>p.status==="stop_watch").map(p=>p.ticker).join(", ")} 관찰 중` : ""}`,
     short: keep.length ? `손절 예외 ${keep.map(p=>p.ticker).join(", ")}` : ""});
   const heavy = pos.filter(p=>(p.weight_pct||0)>=20), addHeavy = heavy.filter(p=>sig[p.ticker]?.signal==="추매");
   R.push({rule:"비중 한도", desc:"비중 20% 이상 종목은 추가 매수 금지", status: addHeavy.length?"crit":"ok",
@@ -579,7 +588,9 @@ function opsSummary(){
 function keyPoints(){
   const out = [], pos = DATA.positions||[], m = DATA.meetings[0], sig = Object.fromEntries(m.agenda.map(a=>[a.ticker,a.signal])), a = DATA.account;
   const hit = pos.filter(p=>p.status==="stop_hit");
-  if (hit.length) out.push({lvl:"crit", tag:"긴급", title:`손절선 아래 ${hit.length}종목`, text: hit.map(p=>`${p.ticker} ${Math.abs(p.stop_gap_pct).toFixed(1)}% 아래 → 결정 ${sig[p.ticker]||"?"}`).join(" · ")});
+  if (hit.length) out.push({lvl:"crit", tag:"긴급", title:`손절 확정 ${hit.length}종목`, text: hit.map(p=>`${p.ticker} ${(p.stop_days_below||0)>=2?`${p.stop_days_below}일 연속 종가 이탈`:"바닥선 이탈"} → 결정 ${sig[p.ticker]||"?"}`).join(" · ")});
+  const watch = pos.filter(p=>p.status==="stop_watch");
+  if (watch.length) out.push({lvl:"warn", tag:"경고", title:`손절 경고 1일차 ${watch.length}종목`, text: watch.map(p=>`${p.ticker} 종가 손절선 아래 — 다음 종가 확인 (바닥선 ${fmt.money(p.floor_price,p.currency)})`).join(" · ")});
   const near = pos.filter(p=>p.status==="near_stop");
   if (near.length) out.push({lvl:"warn", tag:"주의", title:`손절선 근접 ${near.length}종목`, text: near.map(p=>`${p.ticker} ${p.stop_gap_pct.toFixed(1)}% 남음 (손절선 ${fmt.money(p.stop_price,p.currency)})`).join(" · ")});
   const ev = (DATA.events||[]).filter(e=>e.days>=0 && e.days<=14);
@@ -616,7 +627,7 @@ function buildScript(m, isLatest) {
   const q = DATA.quant; if (q?.rsi_bucket) { const b = q.rsi_bucket.find(x=>x.name.startsWith("RSI<30")); say("quant", `최근 백테스트 ${q.valid_signals}건, 7일 후 상승 기준선 ${q.baseline}%. 가장 강한 구간은 RSI 30 미만 ${b?.up_rate}% (평균 ${fmt.pct(b?.avg_ret)}, n=${b?.n})입니다.`); }
 
   let items = m.agenda.slice();
-  if (isLatest) { const pri = {stop_hit:0, near_stop:1, tp_hit:2, near_tp:3, ok:4}; items.sort((a,b) => (pri[pos[a.ticker]?.status]??5) - (pri[pos[b.ticker]?.status]??5) || (pos[b.ticker]?.weight_pct||0) - (pos[a.ticker]?.weight_pct||0)); }
+  if (isLatest) { const pri = {stop_hit:0, stop_watch:1, near_stop:2, tp_hit:3, near_tp:4, ok:5}; items.sort((a,b) => (pri[pos[a.ticker]?.status]??5) - (pri[pos[b.ticker]?.status]??5) || (pos[b.ticker]?.weight_pct||0) - (pos[a.ticker]?.weight_pct||0)); }
   items.forEach((a, i) => {
     const p = isLatest ? pos[a.ticker] : null, sn = a.snap || {};
     S.push({kind:"agenda", ticker:a.ticker, idx:i});
@@ -626,7 +637,7 @@ function buildScript(m, isLatest) {
     const ev = isLatest ? eventFor(a.ticker) : null;
     if (ev) say("strategy", `${a.ticker} 실적 발표 ${dday(ev)}. 발표 전후로 크게 움직일 수 있어요.`);
     if (p && p.stop_price) {
-      let t = p.stop_gap_pct <= 0 ? `손절선 ${fmt.money(p.stop_price,p.currency)} — 이미 ${Math.abs(p.stop_gap_pct).toFixed(1)}% 아래입니다. 손절 도달.` : `손절선 ${fmt.money(p.stop_price,p.currency)}까지 ${p.stop_gap_pct.toFixed(1)}% 남았습니다.${p.stop_gap_pct<=3?" 근접 경보.":""}`;
+      let t = stopLine(p);
       if (p.tp1_gap_pct != null && p.tp1_gap_pct <= 5) t += p.tp1_gap_pct <= 0 ? ` 1차목표 ${fmt.money(p.tp1_price,p.currency)} 도달.` : ` 1차목표까지 ${p.tp1_gap_pct.toFixed(1)}%.`;
       if ((p.weight_pct||0) >= 20) t += ` 비중 ${p.weight_pct}% — 추매 금지 구간.`;
       say("risk", t);
@@ -1024,7 +1035,7 @@ function renderDecisions(){
       <td class="r num">${fmt.money(p.price, p.currency)}</td><td class="r num ${fmt.cls(p.day_chg)}">${fmt.pct(p.day_chg)}</td>
       <td class="r num ${fmt.cls(p.pnl_pct)}">${fmt.pct(p.pnl_pct)}${p.live===false?'<div class="sub">기록값</div>':""}</td>
       <td class="r num">${p.weight_pct!=null ? p.weight_pct.toFixed(1)+"%" : "—"}</td>
-      <td class="r num">${fmt.money(p.stop_price, p.currency)}<div class="sub">${p.stop_gap_pct==null?"":p.stop_gap_pct<=0?`${Math.abs(p.stop_gap_pct).toFixed(1)}% 아래`:`${p.stop_gap_pct.toFixed(1)}% 여유`}</div></td>
+      <td class="r num">${fmt.money(p.stop_price, p.currency)}<div class="sub">${p.status==="stop_hit"?((p.stop_days_below||0)>=2?`종가 ${p.stop_days_below}일 이탈`:"바닥선 이탈"):p.status==="stop_watch"?"종가 1일 이탈":p.stop_gap_pct==null?"":p.stop_gap_pct<=0?`${Math.abs(p.stop_gap_pct).toFixed(1)}% 아래(장중)`:`${p.stop_gap_pct.toFixed(1)}% 여유`}</div></td>
       <td><span class="chip ${st[1]}">${st[0]}</span></td>
       <td><span class="chip sig-${esc(a.signal)}">${esc(a.signal)}</span></td>
       <td><div class="reason">${esc(fmt.short(a.reason, 140))}</div></td>
@@ -1125,7 +1136,7 @@ function renderStaff(){
     quant: `기준선 ${q.baseline ?? "—"}% · 신호 ${q.valid_signals ?? "—"}건`,
     alpha: tr.length ? `추천 ${tr.length}건 평균 ${fmt.pct(tr.reduce((s,t)=>s+t.ret_pct,0)/tr.length)}` : "추천 기록 없음",
     pb: Object.entries(m.agenda.reduce((o,a)=>(o[a.signal]=(o[a.signal]||0)+1,o),{})).map(([k,v])=>`${k} ${v}`).join(" · "),
-    risk: `손절 도달 ${pos.filter(p=>p.status==="stop_hit").length} · 근접 ${pos.filter(p=>p.status==="near_stop").length}`,
+    risk: `손절 확정 ${pos.filter(p=>p.status==="stop_hit").length} · 경고 ${pos.filter(p=>p.status==="stop_watch").length} · 근접 ${pos.filter(p=>p.status==="near_stop").length}`,
     trading: `보유 ${pos.length}종목 · ${fmt.big(DATA.account?.total_usd)}`,
     strategy: (() => { const e = (DATA.events||[]).find(e=>e.days>=0); return e ? `다음 실적: ${e.ticker} ${dday(e)}` : "예정된 실적 없음"; })(),
     compliance: (() => { const v = complianceChecks().filter(r=>r.status==="warn"||r.status==="crit"); return v.length ? `점검 ${v.length}건: ${v.map(r=>r.rule).join(", ")}` : "모든 규정 준수"; })(),
