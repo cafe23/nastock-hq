@@ -265,6 +265,35 @@ td.r .sub{white-space:nowrap}
 .stats .kv{display:flex;flex-direction:column;gap:2px} .stats .kv span{font-size:11.5px;color:var(--muted)}
 .stats .kv b{font:600 20px/1.2 var(--font-mono)}
 @media (max-width:720px){.org .branches{grid-template-columns:minmax(0,1fr)}.org .node{min-width:0}}
+/* 본사/자회사 탭 */
+.tabs{display:flex;gap:4px;padding-block:0 0;margin-top:-2px}
+.tab{appearance:none;border:0;background:none;padding:10px 4px;margin-right:18px;font:600 13.5px/1 var(--font-body);color:var(--muted);cursor:pointer;border-bottom:2.5px solid transparent}
+.tab[aria-selected="true"]{color:var(--ink);border-bottom-color:var(--brass)}
+.tab small{font-weight:500;color:var(--faint);margin-left:5px}
+/* 자회사: NASTOCK 자산운용 */
+.am-hero{margin-top:16px;border-radius:var(--r);border:1px solid var(--line);background:var(--surface);overflow:hidden}
+.am-top{display:flex;gap:18px;align-items:flex-end;flex-wrap:wrap;padding:20px 20px 16px;background:linear-gradient(0deg,var(--surface),color-mix(in srgb,var(--brass) 9%,var(--surface)))}
+.am-top .eyebrow{font-size:11px;letter-spacing:.12em;color:var(--brass);font-weight:600}
+.am-top h2{font:400 26px/1.15 var(--font-display);margin-top:4px}
+.am-top p{margin:6px 0 0;color:var(--muted);font-size:12.5px;max-width:62ch}
+.aum{margin-left:auto;text-align:right}
+.aum > span{font-size:11.5px;color:var(--muted);display:block}
+.aum b{font:600 34px/1.1 var(--font-mono);letter-spacing:-.01em}
+.am-kpis{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));border-top:1px solid var(--line)}
+.am-kpis div{padding:12px 16px;border-left:1px solid var(--line)} .am-kpis div:first-child{border-left:0}
+.am-kpis > div > span{display:block;font-size:11.5px;color:var(--muted)} .am-kpis b{font:600 18px/1.3 var(--font-mono)}
+.blotter{background:var(--led-bg);color:var(--led-amber);font:14px/1.7 var(--font-led);padding:12px 16px;overflow-x:auto;position:relative}
+.blotter::after{content:"";position:absolute;inset:0;pointer-events:none;background:radial-gradient(circle,rgba(0,0,0,0) 55%,rgba(0,0,0,.5) 56%) 0 0/3px 3px}
+.blotter .row{white-space:nowrap;opacity:0;animation:typein .4s ease forwards}
+.blotter .b{color:var(--led-up)} .blotter .s{color:var(--led-down)} .blotter .dim{color:#7a6340}
+@keyframes typein{from{opacity:0;transform:translateX(-6px)}to{opacity:1;transform:none}}
+.chart{padding:12px 16px 16px} .chart svg{width:100%;height:auto;display:block}
+.legend{display:flex;gap:16px;font-size:12px;color:var(--muted);padding:0 16px 12px} .legend i{display:inline-block;width:14px;height:3px;border-radius:2px;margin-right:6px;vertical-align:3px}
+.rules-list{margin:0;padding:12px 16px 16px 34px;font-size:13px;color:var(--muted);display:grid;gap:4px}
+.am-note{font-size:12px;color:var(--muted);padding:0 16px 14px}
+@media (max-width:900px){.am-kpis{grid-template-columns:repeat(3,minmax(0,1fr))}.am-kpis div:nth-child(4){border-left:0}.am-kpis div:nth-child(n+4){border-top:1px solid var(--line)}}
+@media (max-width:560px){.aum{margin-left:0;text-align:left}.am-kpis{grid-template-columns:repeat(2,minmax(0,1fr))}.am-kpis div{border-left:0;border-top:1px solid var(--line)}}
+@media (prefers-reduced-motion:reduce){.blotter .row{animation:none;opacity:1}}
 footer{margin:22px 0 calc(28px + env(safe-area-inset-bottom,0px));font-size:12px;color:var(--faint);display:flex;gap:14px;flex-wrap:wrap}
 
 /* 잠금 */
@@ -300,9 +329,13 @@ footer{margin:22px 0 calc(28px + env(safe-area-inset-bottom,0px));font-size:12px
   </div>
 </div></header>
 
+<nav class="wrap tabs" role="tablist" aria-label="회사 선택">
+  <button class="tab" role="tab" id="tabHq" aria-selected="true" type="button">본사<small>투자전략본부</small></button>
+  <button class="tab" role="tab" id="tabAm" aria-selected="false" type="button">자회사<small>NASTOCK 자산운용</small></button>
+</nav>
 <div class="led" aria-label="시세 전광판"><div class="led-track" id="ledTrack"><span class="led-item">NASTOCK 증권 · 보안 접속 후 시세가 표시됩니다</span></div></div>
 
-<main class="wrap">
+<main class="wrap" id="hqView">
   <section class="block" id="brief">
     <div class="bh"><div><div class="eyebrow">모닝 브리핑 · CIO실</div><h2>오늘의 키포인트</h2><p>회의 결정·리스크·일정·준법·비용에서 지금 알아야 할 것만 추렸어요.</p></div><div class="right" id="nextMeet"></div></div>
     <ul class="kp" id="kp"><li><span class="chip neutral">대기</span><div class="d">보안 접속 후 표시돼요.</div></li></ul>
@@ -392,8 +425,53 @@ footer{margin:22px 0 calc(28px + env(safe-area-inset-bottom,0px));font-size:12px
     <div class="staff" id="staff"></div>
   </section>
 
-  <footer><span>NASTOCK 증권은 개인 포트폴리오용 가상 회사예요. 투자 자문이 아니에요.</span><span id="footUpd"></span><span>데이터는 암호화되어 있고 이 기기에서만 복호화돼요.</span></footer>
 </main>
+
+<main class="wrap" id="amView" hidden>
+  <section class="am-hero">
+    <div class="am-top">
+      <div><div class="eyebrow">자회사 · 펀드 운용</div><h2>NASTOCK 자산운용 · 공격형 1호</h2>
+        <p>본사 투자전략회의의 TOP3 추천을 규칙대로 사고파는 모의 펀드예요. 실제 돈은 움직이지 않고, 실제 시세로 체결해요.</p></div>
+      <div class="aum"><span>운용자산 (AUM)</span><b class="num" id="amAum">—</b><span id="amAumSub"></span></div>
+    </div>
+    <div class="am-kpis" id="amKpis"></div>
+  </section>
+  <section class="block">
+    <div class="bh"><div><div class="eyebrow">딜링룸</div><h2>체결 전광판</h2><p>펀드가 실제 시세로 체결한 매매 기록이에요. 매수는 다음 장 시작가, 매도는 그날 종가예요.</p></div></div>
+    <div class="blotter" id="amBlotter"></div>
+  </section>
+  <section class="block">
+    <div class="bh"><div><div class="eyebrow">운용 성과</div><h2>수익 곡선 · QQQ 비교</h2><p>설정일에 같은 돈으로 QQQ를 샀을 때와 비교한 누적 수익률이에요. ▲는 매수, ▼는 매도.</p></div></div>
+    <div class="chart" id="amChart"></div>
+    <div class="legend"><span><i style="background:var(--brass)"></i>공격형 1호</span><span><i style="background:var(--faint)"></i>QQQ</span></div>
+    <div class="am-note" id="amNote"></div>
+  </section>
+  <div class="grid2">
+    <section class="block">
+      <div class="bh"><div><div class="eyebrow">포트폴리오</div><h2>보유 종목</h2><p>최대 3종목, 평가금액의 1/3씩이에요.</p></div></div>
+      <div class="scroll-x" id="amPos"></div>
+    </section>
+    <section class="block">
+      <div class="bh"><div><div class="eyebrow">펀드 약관</div><h2>운용 규칙</h2><p>사람 판단 없이 이 규칙대로만 움직여요.</p></div></div>
+      <ol class="rules-list">
+        <li>본사 주간 회의 TOP3(리스크 검증 통과)를 다음 장 시작가로 매수</li>
+        <li>최대 3종목 · 1종목당 평가금액의 1/3 · 자리가 없으면 그 추천은 건너뜀</li>
+        <li>종가가 1차목표 이상 → 절반 익절, 남은 절반 손절선은 본전으로</li>
+        <li>종가가 2차목표 이상 → 전량 익절</li>
+        <li>종가 2일 연속 손절선 아래, 또는 바닥선(손절선 -7%p) 아래 → 전량 손절</li>
+        <li>40거래일 넘게 보유하면 정리</li>
+      </ol>
+      <div class="am-note" id="amSkipped"></div>
+    </section>
+  </div>
+  <section class="block">
+    <div class="bh"><div><div class="eyebrow">거래 원장</div><h2>매매 내역</h2></div></div>
+    <div class="scroll-x" id="amTrades"></div>
+  </section>
+</main>
+<div class="wrap">
+  <footer><span>NASTOCK 증권은 개인 포트폴리오용 가상 회사예요. 투자 자문이 아니에요.</span><span id="footUpd"></span><span>데이터는 암호화되어 있고 이 기기에서만 복호화돼요.</span></footer>
+</div>
 
 <div class="lock" id="lock">
   <form id="lockForm" autocomplete="off">
@@ -606,6 +684,8 @@ function keyPoints(){
     out.push({lvl:"info", tag:"TOP3", title:`신규 후보 ${t3.map(p=>`${p.ticker}${p.track==="과매도반등"?"🔄":"🚀"}`).join(" · ")}`, text: avg==null ? "" : `지난 추천 ${tr.length}건 평균 ${fmt.pct(avg)} · 플러스 ${tr.filter(t=>t.ret_pct>0).length}건`}); }
   const viol = complianceChecks().filter(r=>r.status==="warn"||r.status==="crit");
   if (viol.length) out.push({lvl: viol.some(r=>r.status==="crit")?"crit":"warn", tag:"준법", title:`규정 점검 ${viol.length}건`, text: viol.map(r=>r.short).filter(Boolean).join(" · ")});
+  const fs = fundSummary();
+  if (fs) out.push({lvl: fs.vs_qqq_pp >= 0 ? "ok" : "info", tag:"자회사", title:`공격형 1호 C$${fs.equity_cad.toLocaleString("en-US",{minimumFractionDigits:2})} (${fmt.pct(fs.ret_pct)})`, text:`QQQ 대비 ${fs.vs_qqq_pp>0?"+":""}${fs.vs_qqq_pp}%p · 최대 낙폭 ${fs.max_drawdown_pct}% · 보유 ${fs.positions}/3 — 자회사 탭에서 자세히`});
   const oc = opsSummary();
   if (oc) out.push({lvl:"info", tag:"비용", title:`이번 달 AI 운영비 $${oc.month.toFixed(2)}`, text:`최근 분석 ${oc.last.calls}회 호출 · ${fmt.k(oc.last.in+oc.last.out)} 토큰 · $${oc.last.cost_usd.toFixed(3)} · 월 예상 약 $${oc.projected.toFixed(2)}`});
   return out;
@@ -660,6 +740,9 @@ function buildScript(m, isLatest) {
     else if (m.top3_checked === false) say("risk", "⚠️ 규칙 위반 경고가 붙은 추천이에요. 해당 종목은 참고하지 마세요.");
     const past = (DATA.top3_track||[]).filter(t => t.date < m.date);
     if (past.length) { const avg = past.reduce((s,t)=>s+t.ret_pct,0)/past.length, w = past.filter(t=>t.ret_pct>0).length; say("alpha", `참고로 지난 추천 ${past.length}건은 평균 ${fmt.pct(avg)}, 플러스 ${w}건이에요.`); }
+    const fs = fundSummary();
+    if (isLatest && fs) { const F = DATA.fund, full = F.positions.length >= 3;
+      say("alpha", `자회사 NASTOCK 자산운용 공격형 1호: C$${fs.equity_cad.toLocaleString("en-US",{minimumFractionDigits:2})} (${fmt.pct(fs.ret_pct)}), QQQ 대비 ${fs.vs_qqq_pp>0?"+":""}${fs.vs_qqq_pp}%p. 보유 ${F.positions.map(p=>p.ticker).join("·")||"없음"}${full ? " — 자리가 없어 이번 추천은 건너뛰어요." : " — 빈자리에 이번 추천을 다음 장 시작가로 매수 예약해요."}`, {bubble:`1호 펀드 ${fmt.pct(fs.ret_pct)} · QQQ 대비 ${fs.vs_qqq_pp>0?"+":""}${fs.vs_qqq_pp}%p`}); }
     say("cio", "승인합니다. 신규 자금 CAD 1,000 한도 안에서 분할 진입.", {decision:{ticker:"TOP3", signal:"승인"}});
   }
   const u = m.usage;
@@ -1022,6 +1105,7 @@ function renderLED(){
   for (const t of DATA.tape || []) items.push(`<span class="led-item">${esc(t.sym)} ${Number(t.price).toLocaleString("en-US",{maximumFractionDigits:2})} <span class="${t.chg>=0?"lu":"ld"}">${t.chg>=0?"▲":"▼"}${Math.abs(t.chg).toFixed(2)}%</span><span class="sep">◆</span></span>`);
   for (const p of DATA.positions || []) if (p.day_chg != null) items.push(`<span class="led-item">${esc(p.ticker)} ${fmt.money(p.price, p.currency)} <span class="${p.day_chg>=0?"lu":"ld"}">${p.day_chg>=0?"▲":"▼"}${Math.abs(p.day_chg).toFixed(2)}%</span><span class="sep">◆</span></span>`);
   const m = DATA.meetings?.[0]; if (m) items.push(`<span class="led-item">제 ${meetingNo(m)}차 투자전략회의 결정 · ${m.agenda.map(a => `${esc(a.ticker)} ${esc(a.signal)}`).join(" · ")}<span class="sep">◆</span></span>`);
+  const fsL = fundSummary(); if (fsL) items.push(`<span class="led-item">자회사 공격형 1호 C$${fsL.equity_cad.toFixed(2)} <span class="${fsL.ret_pct>=0?"lu":"ld"}">${fsL.ret_pct>=0?"▲":"▼"}${Math.abs(fsL.ret_pct).toFixed(2)}%</span> · QQQ 대비 ${fsL.vs_qqq_pp>0?"+":""}${fsL.vs_qqq_pp}%p<span class="sep">◆</span></span>`);
   items.push(`<span class="led-item">사내 공지 · 다음 투자전략회의 ${esc(nextMeetingLabel())}<span class="sep">◆</span></span>`);
   const ev = (DATA.events||[]).filter(e=>e.days>=0 && e.days<=14); if (ev.length) items.push(`<span class="led-item">실적 일정 · ${ev.map(e=>`${esc(e.ticker)} ${esc(dday(e))}`).join(" · ")}<span class="sep">◆</span></span>`);
   const html = items.join(""); $("#ledTrack").innerHTML = html + html;
@@ -1114,10 +1198,81 @@ function renderOps(){
 }
 function renderOrg(){
   const node = id => { const s = BOT[id]; return `<div class="node"><b><i style="background:${s.color}"></i>${esc(s.dept)}</b><span>${esc(s.name)} · ${esc(s.role)}</span></div>`; };
-  $("#org").innerHTML = `<div class="node ceo"><b>대표이사</b><span>계좌 주인 (나)</span></div><div class="vline"></div>${node("cio")}<div class="vline"></div>
+  const fs = fundSummary();
+  $("#org").innerHTML = `<div class="node ceo"><b>대표이사</b><span>계좌 주인 (나)</span></div><div class="vline"></div>
+    <div style="display:flex;gap:14px;flex-wrap:wrap;justify-content:center;align-items:center">${node("cio")}<button class="node" type="button" onclick="showView('am')" style="cursor:pointer;font:inherit;color:inherit;border-style:dashed"><b><i style="background:var(--brass)"></i>NASTOCK 자산운용</b><span>자회사 · 공격형 1호${fs ? ` · ${fmt.pct(fs.ret_pct)}` : ""}</span></button></div><div class="vline"></div>
     <div class="branches"><div class="branch"><h3>투자부문</h3><div class="units">${["research","strategy","quant","alpha","pb"].map(node).join("")}</div></div>
     <div class="branch"><h3>관리부문</h3><div class="units">${["risk","compliance","trading","finance"].map(node).join("")}</div></div></div>`;
 }
+function fundSummary(){ return DATA.fund?.summary || null; }
+function renderFund(){
+  const F = DATA.fund;
+  if (!F) { $("#amAum").textContent = "준비 중"; $("#amKpis").innerHTML = ""; $("#amBlotter").innerHTML = `<div class="row" style="opacity:1">NO TRADES YET</div>`; return; }
+  const S = F.summary, cad = v => "C$" + Number(v).toLocaleString("en-US",{minimumFractionDigits:2, maximumFractionDigits:2});
+  $("#amAum").textContent = cad(S.equity_cad); $("#amAum").className = "num " + fmt.cls(S.ret_pct);
+  $("#amAumSub").textContent = `설정 ${fmt.date(S.start_date)} · C$${S.start_cad.toLocaleString()} 시작`;
+  $("#amKpis").innerHTML = [
+    ["누적 수익률", `<span class="${fmt.cls(S.ret_pct)}">${fmt.pct(S.ret_pct)}</span>`],
+    ["QQQ (같은 기간)", `<span class="${fmt.cls(S.qqq_ret_pct)}">${fmt.pct(S.qqq_ret_pct)}</span>`],
+    ["QQQ 대비", `<span class="${fmt.cls(S.vs_qqq_pp)}">${S.vs_qqq_pp==null?"—":(S.vs_qqq_pp>0?"+":"")+S.vs_qqq_pp.toFixed(2)+"%p"}</span>`],
+    ["최대 낙폭", `${S.max_drawdown_pct.toFixed(2)}%`],
+    ["실현 손익 · 승률", `<span class="${fmt.cls(S.realized_usd)}">${S.realized_usd>=0?"+":"−"}$${Math.abs(S.realized_usd).toFixed(2)}</span> · ${S.win_rate==null?"—":S.win_rate+"%"}`],
+    ["보유 · 대기 · 현금", `${S.positions}/3 · ${S.pending} · $${S.cash_usd.toFixed(0)}`],
+  ].map(([k,v]) => `<div><span>${k}</span><b>${v}</b></div>`).join("");
+  // 딜링룸 전광판
+  const rows = F.trades.slice().reverse().slice(0, 14).map((t, i) => {
+    const d = t.date.slice(5).replace("-", "/"), side = t.side === "매수" ? `<span class="b">BUY </span>` : `<span class="s">SELL</span>`;
+    const pnl = t.side === "매도" ? ` <span class="${t.pnl_usd>=0?"b":"s"}">${t.pnl_usd>=0?"+":""}${t.pnl_pct.toFixed(1)}%</span>` : "";
+    return `<div class="row" style="animation-delay:${REDUCED?0:i*0.12}s">${d}  ${side} ${esc(t.ticker.padEnd(5," "))} ${String(t.shares).padStart(7," ")} @ ${t.price.toFixed(2).padStart(7," ")}${pnl} <span class="dim">· ${esc(t.reason.split(" — ")[0])}</span></div>`;
+  });
+  (F.pending||[]).forEach(o => rows.unshift(`<div class="row"><span class="dim">대기</span>  BUY ${esc(o.ticker.padEnd(5," "))} 다음 장 시작가 · ${esc(o.signal_date.slice(5).replace("-","/"))} 신호</div>`));
+  $("#amBlotter").innerHTML = rows.join("") || `<div class="row" style="opacity:1">NO TRADES YET</div>`;
+  renderFundChart(F);
+  $("#amNote").textContent = F.backfilled_from ? `${fmt.date(F.backfilled_from)}~11/10은 그동안의 TOP3 추천을 같은 규칙으로 소급 적용한 결과이고, 이후는 매일 실시간으로 모의 운용해요.` : "";
+  // 보유 종목
+  $("#amPos").innerHTML = F.positions.length ? `<table><thead><tr><th>종목</th><th class="r">매수가</th><th class="r">현재가</th><th class="r">수익률</th><th class="r">손절선</th><th class="r">1차목표</th></tr></thead><tbody>${F.positions.map(p => { const r = (p.last_price/p.fill_price-1)*100;
+    return `<tr><td><div class="tk">${esc(p.ticker)}</div><div class="sub">${p.track==="과매도반등"?"🔄":"🚀"} ${esc(p.track||"")} · ${fmt.date(p.fill_date)} · ${p.shares}주</div></td>
+      <td class="r num">$${p.fill_price.toFixed(2)}</td><td class="r num">$${p.last_price.toFixed(2)}</td><td class="r num ${fmt.cls(r)}">${fmt.pct(r)}</td>
+      <td class="r num">$${p.stop.toFixed(2)}<div class="sub">${p.below_days?`종가 ${p.below_days}일 이탈`:`${((p.last_price/p.stop-1)*100).toFixed(1)}% 여유`}</div></td>
+      <td class="r num">${p.tp1?"$"+p.tp1.toFixed(2):"—"}<div class="sub">${p.tp1_done?"절반 익절 완료":p.tp1?`+${((p.tp1/p.last_price-1)*100).toFixed(1)}% 남음`:""}</div></td></tr>`; }).join("")}</tbody></table>` : `<div class="empty">보유 종목 없음 — 다음 TOP3를 기다리는 중</div>`;
+  const sk = (F.skipped||[]).slice(-6).reverse();
+  $("#amSkipped").innerHTML = sk.length ? `<b>최근 건너뛴 추천</b><br>${sk.map(x => `${esc(x.date.slice(5).replace("-","/"))} ${esc(x.tickers.join("·"))} — ${esc(x.reason)}`).join("<br>")}` : "";
+  // 매매 내역
+  $("#amTrades").innerHTML = `<table><thead><tr><th>날짜</th><th>구분</th><th>종목</th><th class="r">수량</th><th class="r">가격</th><th class="r">금액</th><th class="r">손익</th><th>사유</th></tr></thead><tbody>${F.trades.slice().reverse().map(t => `<tr><td class="num">${fmt.date(t.date)}</td><td><span class="chip ${t.side==="매수"?"ok":"crit"}">${t.side}</span></td><td class="tk">${esc(t.ticker)}</td><td class="r num">${t.shares}</td><td class="r num">$${t.price.toFixed(2)}</td><td class="r num">$${t.value_usd.toFixed(2)}</td><td class="r num ${t.side==="매도"?fmt.cls(t.pnl_usd):""}">${t.side==="매도"?`${t.pnl_usd>=0?"+":"−"}$${Math.abs(t.pnl_usd).toFixed(2)} (${fmt.pct(t.pnl_pct)})`:"—"}</td><td class="reason">${esc(t.reason)}</td></tr>`).join("")}</tbody></table>`;
+}
+function renderFundChart(F){
+  const E = F.equity || []; if (E.length < 2) { $("#amChart").innerHTML = `<div class="empty">수익 곡선은 거래일이 쌓이면 그려져요.</div>`; return; }
+  const cs = getComputedStyle(document.documentElement), brass = cs.getPropertyValue("--brass").trim(), faint = cs.getPropertyValue("--faint").trim(), line = cs.getPropertyValue("--line").trim(), mu = cs.getPropertyValue("--muted").trim(), up = cs.getPropertyValue("--up").trim(), dn = cs.getPropertyValue("--down").trim(), ink = cs.getPropertyValue("--ink").trim();
+  const f = E.map(e => (e.usd / F.start_usd - 1) * 100), q = E.map(e => (e.qqq / F.qqq_start - 1) * 100);
+  const all = f.concat(q, [0]); let lo = Math.floor(Math.min(...all) - 1), hi = Math.ceil(Math.max(...all) + 1);
+  const Wd = 640, Hd = 240, L = 44, R = 64, T = 14, B = 30, sx = i => L + i * (Wd - L - R) / (E.length - 1), sy = v => T + (hi - v) / (hi - lo) * (Hd - T - B);
+  const path = arr => arr.map((v, i) => `${i ? "L" : "M"}${sx(i).toFixed(1)},${sy(v).toFixed(1)}`).join("");
+  let s = `<svg viewBox="0 0 ${Wd} ${Hd}" role="img" aria-label="공격형 1호와 QQQ 누적 수익률">`;
+  const step = (hi - lo) > 16 ? 5 : (hi - lo) > 8 ? 2 : 1;
+  for (let v = Math.ceil(lo/step)*step; v <= hi; v += step) s += `<line x1="${L}" x2="${Wd-R}" y1="${sy(v)}" y2="${sy(v)}" stroke="${line}" stroke-width="${v===0?1.6:1}"/><text x="${L-6}" y="${sy(v)+4}" fill="${mu}" font-size="11" text-anchor="end" font-family="IBM Plex Mono">${v>0?"+":""}${v}%</text>`;
+  E.forEach((e, i) => { if (i % Math.max(1, Math.ceil(E.length/8)) === 0 || i === E.length-1) s += `<text x="${sx(i)}" y="${Hd-8}" fill="${mu}" font-size="11" text-anchor="middle" font-family="IBM Plex Mono">${e.date.slice(5).replace("-","/")}</text>`; });
+  s += `<path d="${path(f)} L${sx(E.length-1)},${sy(lo)} L${sx(0)},${sy(lo)} Z" fill="${brass}" opacity=".10"/>`;
+  s += `<path d="${path(q)}" fill="none" stroke="${faint}" stroke-width="2" stroke-dasharray="5 4"/><path d="${path(f)}" fill="none" stroke="${brass}" stroke-width="2.6"/>`;
+  const idx = Object.fromEntries(E.map((e, i) => [e.date, i]));
+  F.trades.forEach(t => { const i = idx[t.date]; if (i == null) return; const x = sx(i), y = sy(f[i]);
+    s += t.side === "매수" ? `<path d="M${x},${y-12} l6,9 h-12 z" fill="${up}"><title>${esc(t.date)} 매수 ${esc(t.ticker)}</title></path>` : `<path d="M${x},${y+12} l6,-9 h-12 z" fill="${dn}"><title>${esc(t.date)} 매도 ${esc(t.ticker)}</title></path>`; });
+  const li = E.length - 1;
+  s += `<circle cx="${sx(li)}" cy="${sy(f[li])}" r="4.5" fill="${brass}"/><text x="${sx(li)+8}" y="${sy(f[li])+4}" fill="${ink}" font-size="12" font-weight="600" font-family="IBM Plex Mono">${f[li]>0?"+":""}${f[li].toFixed(2)}%</text>`;
+  s += `<text x="${sx(li)+8}" y="${sy(q[li])+4}" fill="${mu}" font-size="11" font-family="IBM Plex Mono">${q[li]>0?"+":""}${q[li].toFixed(2)}%</text></svg>`;
+  $("#amChart").innerHTML = s;
+}
+function countUp(el, to){ if (REDUCED) return; const from = to * 0.92, t0 = performance.now(); const tick = now => { const k = Math.min(1, (now - t0) / 900), v = from + (to - from) * (1 - Math.pow(1 - k, 3)); el.textContent = "C$" + v.toLocaleString("en-US",{minimumFractionDigits:2, maximumFractionDigits:2}); if (k < 1) requestAnimationFrame(tick); }; requestAnimationFrame(tick); }
+function showView(v){
+  const am = v === "am";
+  $("#hqView").hidden = am; $("#amView").hidden = !am;
+  $("#tabHq").setAttribute("aria-selected", !am); $("#tabAm").setAttribute("aria-selected", am);
+  if (am && DATA?.fund) { renderFund(); countUp($("#amAum"), DATA.fund.summary.equity_cad); }
+  if (!am) requestAnimationFrame(resize);
+  try { history.replaceState(null, "", am ? "#am" : location.pathname + location.search); } catch (e) {}
+}
+$("#tabHq").addEventListener("click", () => showView("hq"));
+$("#tabAm").addEventListener("click", () => showView("am"));
+window.addEventListener("hashchange", () => showView(location.hash === "#am" ? "am" : "hq"));
 function renderMeetingList(){
   const cur = MEETING?.date;
   $("#mlist").innerHTML = DATA.meetings.map((m, i) => {
@@ -1134,7 +1289,7 @@ function renderStaff(){
     cio: `최근 회의 제 ${meetingNo(m)}차 · 결재 ${m.agenda.length}건`,
     research: fmt.short(m.market_line || "시장 요약 없음", 46),
     quant: `기준선 ${q.baseline ?? "—"}% · 신호 ${q.valid_signals ?? "—"}건`,
-    alpha: tr.length ? `추천 ${tr.length}건 평균 ${fmt.pct(tr.reduce((s,t)=>s+t.ret_pct,0)/tr.length)}` : "추천 기록 없음",
+    alpha: (fundSummary() ? `자회사 1호 ${fmt.pct(fundSummary().ret_pct)} · ` : "") + (tr.length ? `추천 ${tr.length}건 평균 ${fmt.pct(tr.reduce((s,t)=>s+t.ret_pct,0)/tr.length)}` : "추천 기록 없음"),
     pb: Object.entries(m.agenda.reduce((o,a)=>(o[a.signal]=(o[a.signal]||0)+1,o),{})).map(([k,v])=>`${k} ${v}`).join(" · "),
     risk: `손절 확정 ${pos.filter(p=>p.status==="stop_hit").length} · 경고 ${pos.filter(p=>p.status==="stop_watch").length} · 근접 ${pos.filter(p=>p.status==="near_stop").length}`,
     trading: `보유 ${pos.length}종목 · ${fmt.big(DATA.account?.total_usd)}`,
@@ -1184,7 +1339,8 @@ function apply(d, first){
   const u = new Date(d.updated_at);
   const label = `${u.toLocaleString("ko-KR",{timeZone:"America/New_York",month:"numeric",day:"numeric",hour:"2-digit",minute:"2-digit",hour12:false})} ET`;
   $("#updated").textContent = label; $("#footUpd").textContent = `마지막 갱신 ${label} · ${({weekly:"주간 회의",daily:"일일 시세",backfill:"초기 데이터"})[d.updated_by] || d.updated_by}`;
-  renderKeyPoints(); renderLED(); renderDecisions(); renderAccount(); renderQuant(); renderEvents(); renderCompliance(); renderTop3(); renderOps(); renderOrg(); renderStaff();
+  renderKeyPoints(); renderLED(); renderDecisions(); renderAccount(); renderQuant(); renderEvents(); renderCompliance(); renderTop3(); renderOps(); renderOrg(); renderStaff(); renderFund();
+  if (first && location.hash === "#am") showView("am");
   if (first) startMeeting(d.meetings[0], true);
   else { renderMeetingList(); if (prev !== d.updated_at) toast("새 데이터가 도착했어요"); }
 }
