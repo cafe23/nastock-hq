@@ -1220,7 +1220,8 @@ setInterval(() => { if (!DATA && !paused) ambient(); }, 9000); setTimeout(() => 
 (async () => {
   const saved = store.get("nastock.pass");
   if (saved) { try { await unlock(saved, true); return; } catch (e) { store.del("nastock.pass"); } }
-  $("#lock").hidden = false; $("#pass").focus();
+  $("#lock").hidden = false;
+  if (matchMedia("(pointer: fine)").matches) $("#pass").focus();   // 폰에선 키보드가 바로 뜨지 않게
 })();
 </script>
 </body>
